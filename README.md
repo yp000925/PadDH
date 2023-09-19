@@ -33,7 +33,7 @@ The following is a simple process to try your own dataset.
 - Update the model path in configuration file ```configs/config.yaml```
 - Prepare your own dataset. The dataset should be saved in the folder ```./data/YOUR_DATA```. The dataset should be saved in the format of ```.png``` or ```.jpg```.
 - Fill in the parameters of your setup in ```configs/task_config.yaml```
-- Run ```python experiment.py --task_config configs/task_exp.yaml --exp_name YOUR_EXP_NAME --save_dir YOUR_OUTPATH``` to reconstruct your own data. The results will be saved in the folder ```./YOUR_OUTPATH```.
+- Run ```python main.py --task_config configs/task_exp.yaml --exp_name YOUR_EXP_NAME --save_dir YOUR_OUTPATH``` to reconstruct your own data. The results will be saved in the folder ```./YOUR_OUTPATH```.
 
 [//]: # (    - Modify the function ```parse_task``` in ```experiment.py``` to load your own dataset. )
 
