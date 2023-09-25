@@ -4,7 +4,7 @@ This repository contains the code for the paper
 
  In this paper, we propose a novel unsupervised algorithm called physics-aware diffusion model (PadDH), specifically designed for snapshot digital holographic reconstruction. 
  PadDH represents a pioneering adaptation of the diffusion model that seamlessly integrates the physical model into its generative process. 
-Through comprehensive experiments using both synthetic and experimental data, we validate the remarkable capabilities of PadDH in effectively reducing twin-image contamination and generating high-quality reconstructions. Our work showcases significant advancements in holographic imaging by harnessing the full potential of diffusion models, leading to improved reconstruction quality and enhanced efficiency from single-shot measurements.
+Through comprehensive experiments using both synthetic and experimental data, we validate the remarkable capabilities of PadDH in effectively reducing twin-image contamination and generating high-quality reconstructions. Our work showcases significant advancements in holographic imaging by harnessing the powerful prior knowledge encoded in pre-trained diffusion models, leading to improved reconstruction quality and enhanced efficiency from single-shot measurements.
  
 <img src="src/process.gif" alt="precess" width="150" height="150">   <img src="src/diagram1.png" alt="diagram1" width="200" height="150">   <img src="src/diagram2.png" alt="diagram1" width="200" height="150"> 
 <br /> If you have any question on the code, please contact the author: yp000925@connect.hku.hk
