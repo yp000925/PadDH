@@ -1,6 +1,6 @@
 # PadDH:Physics-aware diffusion model
 This repository contains the code for the paper 
-<br /> Yunping Zhang, Xihui Liu and Edmund Y. Lam "Inline snapshot holography using a physics-aware diffusion model" (_under review_)
+<br /> Zhang, Yunping, Xihui Liu, and Edmund Y. Lam. "Single-shot inline holography using a physics-aware diffusion model." Optics Express 32.6 (2024): 10444-10460.
 
  In this paper, we propose a novel unsupervised algorithm called physics-aware diffusion model (PadDH), specifically designed for snapshot digital holographic reconstruction. 
  PadDH represents a pioneering adaptation of the diffusion model that seamlessly integrates the physical model into its generative process. 
