@@ -1,0 +1,16 @@
+correction:
+  scale: 5
+data:
+  name: dh
+  root:  # shall be 'data/YOUR_DATA_PATH'
+
+operator:
+  prop_kernel:
+    wavelength: # wavelength of the light source (m)
+    deltax: # pixel size of the sensor (m) NOTE: If you use resize your hologram , you should modify the parameters of deltax and deltay accordingly.
+    deltay:
+    distance: # sample-to-sensor distance in your setup (m)
+    nx: 256 # This should match the network input size [256,256]
+    ny: 256
+
+

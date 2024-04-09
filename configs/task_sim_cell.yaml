@@ -1,0 +1,16 @@
+correction:
+  scale: 3
+data:
+  name: dh
+  root: data/cells/
+
+operator:
+  prop_kernel:
+    wavelength: 532.3e-9
+    deltax: 1.12e-6
+    deltay: 1.12e-6
+    distance: 1.065e-3
+    nx: 256
+    ny: 256
+
+
