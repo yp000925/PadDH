@@ -123,8 +123,7 @@ def main():
     # Prepare Operator
     operator = DHOperator(device=device, **task_config['operator'])
     # noiser = get_noise(**task_config['operator']['noise'])
-    logger.info(f"Prop kernel: {task_config['operator']['prop_kernel']} / Noise: {task_config['operator']['noise']['name']}"
-                f" / Noise level: {task_config['operator']['noise']['sigma']}")
+    logger.info(f"Prop kernel: {task_config['operator']['prop_kernel']} ")
 
     # Prepare measurement
     measurement = task_parser['measurement']
