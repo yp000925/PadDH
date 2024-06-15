@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="lab1">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/project/guided-diffusion" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="zhangyp@147.8.182.3:21000 password (9)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/zhangyp/project/guided-diffusion" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>
