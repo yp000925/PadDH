@@ -1,6 +1,6 @@
 conditioning:
   method: gc
-  scale: 5
+  scale: 3
 data:
   name: dh
   root:  # shall be 'data/YOUR_DATA_PATH'

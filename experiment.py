@@ -13,28 +13,15 @@ import json
 from torch.fft import fft2, ifft2
 import torch
 import matplotlib.pyplot as plt
+from pad.diffusion import create_sampler
+from pad.condition_methods import GradientCorrection,Identity
 from pad.unet import create_model
-from pad.physical_model import DHOperator
-
+from pad.physical_model import DHOperator, get_noise
 from pad.utils import rgb_to_gray_tensor,get_logger,prepross_bg,generate_otf_torch
-import torchvision.transforms as transforms
-from pad.physical_model import DHCorrector
-from pad.script_util import create_gaussian_diffusion
-def load_yaml(file_path: str) -> dict:
-    with open(file_path) as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
-    return config
 
 
-def psnr(x, im_orig):
-    def norm_tensor(x):
-        return (x - torch.min(x)) / (torch.max(x) - torch.min(x))
-
-    x = norm_tensor(x)
-    im_orig = norm_tensor(im_orig)
-    mse = torch.mean(torch.square(im_orig - x))
-    psnr = torch.tensor(10.0) * torch.log10(1 / mse)
-    return psnr
+# EXP_NAME = 'USAF'
+# EXP_NAME = 'convallaria'
 
 def parse_task(exp_name):
     '''
@@ -80,6 +67,25 @@ def parse_task(exp_name):
         raise NotImplementedError
 
 
+
+
+def load_yaml(file_path: str) -> dict:
+    with open(file_path) as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+    return config
+
+
+def psnr(x, im_orig):
+    def norm_tensor(x):
+        return (x - torch.min(x)) / (torch.max(x) - torch.min(x))
+
+    x = norm_tensor(x)
+    im_orig = norm_tensor(im_orig)
+    mse = torch.mean(torch.square(im_orig - x))
+    psnr = torch.tensor(10.0) * torch.log10(1 / mse)
+    return psnr
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_config', default='configs/model_config.yaml', type=str)
@@ -106,29 +112,50 @@ def main():
     diffusion_config = load_yaml(args.diffusion_config)
     task_config = load_yaml(args.task_config)
     EXP_NAME = args.exp_name
-    task_parser = parse_task(EXP_NAME)
-    task_config['operator']['prop_kernel'] = task_parser['prop_kernel']
-    logger.info(f"Prop kernel: {task_config['operator']['prop_kernel']} ")
-    # Working directory
-    out_path = os.path.join(args.save_dir, EXP_NAME)
-    os.makedirs(out_path, exist_ok=True)
-    for img_dir in ['input', 'recon', 'progress', 'label']:
-        os.makedirs(os.path.join(out_path, img_dir), exist_ok=True)
+
 
     # Load model
     model = create_model(**model_config)
     model = model.to(device)
     model.eval()
 
-    # Prepare Operator
+    # Prepare Operator and noise
+    task_parser = parse_task(EXP_NAME)
+    task_config['operator']['prop_kernel'] = task_parser['prop_kernel']
     operator = DHOperator(device=device, **task_config['operator'])
-    # noiser = get_noise(**task_config['operator']['noise'])
-    logger.info(f"Prop kernel: {task_config['operator']['prop_kernel']} ")
+    noiser = get_noise(**task_config['operator']['noise'])
+    logger.info(f"Prop kernel: {task_config['operator']['prop_kernel']} / Noise: {task_config['operator']['noise']['name']}"
+                f" / Noise level: {task_config['operator']['noise']['sigma']}")
 
-    # Prepare measurement
+    # Prepare conditioning method
+    scale = task_config['conditioning']['scale']
+    if task_config['conditioning']['method'] == 'gc':
+        logger.info(f"Conditioning method : sampling with gradient correction")
+        logger.info(f"Conditioning scale : {scale}")
+        cond_method = GradientCorrection(operator=operator, noiser=noiser, scale=scale)
+    else:
+        logger.info(f"Conditioning method : vanilla sampling")
+        cond_method = Identity(operator=operator, noiser=noiser, scale=scale)
+    measurement_cond_fn = cond_method.conditioning
+
+    logger.info(f"Conditioning method : {task_config['conditioning']['method']}")
+
+    # Load diffusion sampler
+    diffusion_config['timestep_respacing'] = [500]
+    sampler = create_sampler(**diffusion_config)
+    sample_fn = partial(sampler.p_sample_loop, model=model, measurement_cond_fn=measurement_cond_fn)
+
+    # Working directory
+    out_path = os.path.join(args.save_dir, EXP_NAME)
+    os.makedirs(out_path, exist_ok=True)
+    for img_dir in ['input', 'recon', 'progress', 'label']:
+        os.makedirs(os.path.join(out_path, img_dir), exist_ok=True)
+
+    # Prepare data
     measurement = task_parser['measurement']
     measurement = torch.from_numpy(measurement)
     measurement = measurement / torch.max(measurement)
+
     A = generate_otf_torch(**task_parser['prop_kernel'])
     AT = torch.conj(A)
     rec = ifft2(torch.multiply(AT, fft2(measurement)))
@@ -138,34 +165,15 @@ def main():
     plt.show()
     measurement = measurement.expand(1, 3, 256, 256).to(device)
 
-    # Prepare correcting method
-    scale = task_config['correction']['scale']
-    corrector = DHCorrector(operator=operator, measurement=measurement,scale=scale)
-
-    # Load diffusion sampler
-    diffusion_config['timestep_respacing'] = [500]
-    diffusion = create_gaussian_diffusion(**diffusion_config)
-    sample_fn = diffusion.p_sample_loop
-
     # Sampling
     x_start = operator.backward(measurement).requires_grad_()
     plt.imshow(x_start[0,0,:,:].tolist(), cmap='gray')
     plt.show()
 
-    sample = sample_fn(
-        model,
-        x_start.shape,
-        x_start = x_start,
-        correction_fn=corrector.correcting,
-        save_root=out_path,
-        verbose = True,
-        progress=True
-    )
-
+    sample = sample_fn(x_start=x_start, measurement=measurement, record=True, save_root=out_path)
     fname = EXP_NAME + '.png'
     plt.imsave(os.path.join(out_path, 'input', fname), rgb_to_gray_tensor(measurement)[0, 0, :, :].tolist(), cmap='gray')
     plt.imsave(os.path.join(out_path, 'recon', fname), rgb_to_gray_tensor(sample)[0, 0, :, :].tolist(), cmap='gray')
-
 
 
 if __name__ == '__main__':
