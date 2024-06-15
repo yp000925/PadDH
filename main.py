@@ -1,7 +1,6 @@
 '''
-This script is used to validate the PadDH with experimental data
-Two examples are provided: USAF and convallaria
-You may use your own experimental data by defining your own task within the parse_task function
+This script is used to validate the PadDH with your own data
+Please follow the readme.md for details
 '''
 from functools import partial
 import os
