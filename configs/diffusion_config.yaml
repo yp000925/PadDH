@@ -1,8 +1,9 @@
+sampler: ddpm
 steps: 1000
 noise_schedule: linear
-predict_xstart: False
-learn_sigma: True
+model_mean_type: epsilon 
+model_var_type: learned_range
+dynamic_threshold: False
+clip_denoised: True
 rescale_timesteps: True
-timestep_respacing: 500
-
-
+timestep_respacing: [250]

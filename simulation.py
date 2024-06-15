@@ -7,21 +7,17 @@ from functools import partial
 import os
 import argparse
 import yaml
-import os
-import argparse
-import yaml
-from PIL import  Image
-import numpy as np
 
 import torch
-import matplotlib.pyplot as plt
-from pad.unet import create_model
-from pad.physical_model import DHOperator
-from data.dataloader import get_dataset, get_dataloader
 import torchvision.transforms as transforms
+import matplotlib.pyplot as plt
+from pad.diffusion import create_sampler
+from data.dataloader import get_dataset, get_dataloader
+from pad.condition_methods import GradientCorrection,Identity
+from pad.unet import create_model
+from pad.physical_model import DHOperator, get_noise
 from pad.utils import rgb_to_gray_tensor,get_logger,clear_color,normalize_np
-from pad.physical_model import DHCorrector
-from pad.script_util import create_gaussian_diffusion
+
 
 def load_yaml(file_path: str) -> dict:
     with open(file_path) as f:
@@ -74,8 +70,25 @@ def main():
 
     # Prepare Operator and noise
     operator = DHOperator(device=device, **task_config['operator'])
-    # noiser = get_noise(**task_config['operator']['noise'])
-    logger.info(f"Prop kernel: {task_config['operator']['prop_kernel']} ")
+
+    noiser = get_noise(**task_config['operator']['noise'])
+    logger.info(f"Prop kernel: {task_config['operator']['prop_kernel']} / Noise: {task_config['operator']['noise']['name']}"
+                f" / Noise level: {task_config['operator']['noise']['sigma']}")
+
+    # Prepare conditioning method
+    scale = task_config['conditioning']['scale']
+    if task_config['conditioning']['method'] == 'gc':
+        logger.info(f"Conditioning method : sampling with gradient correction")
+        logger.info(f"Conditioning scale : {scale}")
+        cond_method = GradientCorrection(operator=operator, noiser=noiser, scale=scale)
+    else:
+        logger.info(f"Conditioning method : vanilla sampling")
+        cond_method = Identity(operator=operator, noiser=noiser, scale=scale)
+    measurement_cond_fn = cond_method.conditioning
+
+    # Load diffusion sampler
+    sampler = create_sampler(**diffusion_config)
+    sample_fn = partial(sampler.p_sample_loop, model=model, measurement_cond_fn=measurement_cond_fn)
 
     # Working directory
     out_path = os.path.join(args.save_dir, EXP_NAME)
@@ -89,42 +102,23 @@ def main():
     dataset = get_dataset(**data_config, transforms=transform)
     loader = get_dataloader(dataset, batch_size=1, num_workers=0, train=False)
 
-    # Load diffusion sampler
-    diffusion_config['timestep_respacing'] = [500]
-    diffusion = create_gaussian_diffusion(**diffusion_config)
-    sample_fn = diffusion.p_sample_loop
-
     # Do Inference
     for i, ref_img in enumerate(loader):
         logger.info(f"Inference for image {i}")
         fname = str(i).zfill(5) + '.png'
         ref_img = ref_img.to(device)
 
-        # Prepare measurement
         y = operator.forward(ref_img)
-        measurement = y / torch.max(y)
+        y_n = noiser(y)
 
-
-        # Prepare correcting method
-        scale = task_config['correction']['scale']
-        corrector = DHCorrector(operator=operator, measurement=measurement, scale=scale)
-
-        # start reconstruction
+        # Sampling
+        measurement = y_n / torch.max(y_n)
         x_start = operator.backward(measurement).requires_grad_()
         plt.imshow(rgb_to_gray_tensor(x_start)[0, 0, :, :].tolist(), cmap='gray')
         plt.show()
+        sample = sample_fn(x_start=x_start, measurement=measurement, record=True, save_root=out_path)
 
-        sample = sample_fn(
-            model,
-            x_start.shape,
-            x_start=x_start,
-            correction_fn=corrector.correcting,
-            save_root=out_path,
-            verbose=True,
-            progress=True
-        )
-
-        plt.imsave(os.path.join(out_path, 'input', fname), rgb_to_gray_tensor(y)[0,0,:,:].tolist(), cmap='gray')
+        plt.imsave(os.path.join(out_path, 'input', fname), rgb_to_gray_tensor(y_n)[0,0,:,:].tolist(), cmap='gray')
         plt.imsave(os.path.join(out_path, 'label', fname), rgb_to_gray_tensor(ref_img)[0,0,:,:].tolist(),cmap='gray')
         plt.imsave(os.path.join(out_path, 'recon', fname), rgb_to_gray_tensor(sample)[0,0,:,:].tolist(),cmap='gray')
         print(psnr(rgb_to_gray_tensor(sample), rgb_to_gray_tensor(ref_img)))
