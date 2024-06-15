@@ -35,5 +35,20 @@ The following is a simple process to try your own dataset.
 - Fill in the parameters of your setup in ```configs/task_config.yaml```
 - Run ```python main.py --task_config configs/task_exp.yaml --exp_name YOUR_EXP_NAME --save_dir YOUR_OUTPATH``` to reconstruct your own data. The results will be saved in the folder ```./YOUR_OUTPATH```.
 
+### Citatation
+If you find this work useful, please consider citing the following paper:
+```
+@article{zhang2024single,
+  title={Single-shot inline holography using a physics-aware diffusion model},
+  author={Zhang, Yunping and Liu, Xihui and Lam, Edmund Y},
+  journal={Optics Express},
+  volume={32},
+  number={6},
+  pages={10444--10460},
+  year={2024},
+  publisher={Optica Publishing Group}
+}
+```
+
 ### Ackowledgements 
 This implementation is based on / inspired by the open-source diffusion models [DDPM](https://github.com/hojonathanho/diffusion), [guided-diffusion](https://github.com/openai/guided-diffusion), [DPS](https://github.com/DPS2022/diffusion-posterior-sampling)
