@@ -35,25 +35,5 @@ The following is a simple process to try your own dataset.
 - Fill in the parameters of your setup in ```configs/task_config.yaml```
 - Run ```python main.py --task_config configs/task_exp.yaml --exp_name YOUR_EXP_NAME --save_dir YOUR_OUTPATH``` to reconstruct your own data. The results will be saved in the folder ```./YOUR_OUTPATH```.
 
-[//]: # (    - Modify the function ```parse_task``` in ```experiment.py``` to load your own dataset. )
-
-[//]: # (      ```python)
-
-[//]: # (        def parse_task&#40;exp_name&#41;: )
-
-[//]: # (            # define the prop_kernel and measurement &#40;preprocessed hologram&#41; for each experiment)
-
-[//]: # (            if exp_name == 'YOUR_DATA':)
-
-[//]: # (                # define the preprocess_img function to load your own data, it should be normalized to [0,1] and the shape should be [256,256] to match the pre-trained network.)
-
-[//]: # (                processed_img = preprocess_img&#40;'./data/YOUR_DATA'&#41;  )
-
-[//]: # (                # define the prop_kernel, fill in your own parameters. Note that if you use resize, you should also update the parameters of deltax and deltay accordingly.)
-
-[//]: # (                prop_kernel = dict&#40;wavelength=None,deltax=None,deltay=None,distance=None, nx=256, ny=256&#41;)
-
-[//]: # (                return {'prop_kernel':prop_kernel, 'measurement':processed_img} )
-
-[//]: # (      ```)
-    
+### Ackowledgements 
+This implementation is based on / inspired by the open-source diffusion models [DDPM](https://github.com/hojonathanho/diffusion), [guided-diffusion](https://github.com/openai/guided-diffusion), [DPS](https://github.com/DPS2022/diffusion-posterior-sampling)
